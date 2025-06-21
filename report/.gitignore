@@ -1,0 +1,25 @@
+# Temporary files
+*.tmp
+# Editor specific files
+*.swp
+# LaTeX editor files
+*.bak       
+*.log
+*.aux
+*.bbl   
+*.blg
+*.dvi
+*.idx
+*.ilg
+*.ind
+*.lof
+*.lot
+*.out
+*.toc
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+# PDF files
+*.pdf
+# Output directories
+output/
