@@ -214,9 +214,14 @@ the injection well, and the right well is the production well.
 \end{figure}
 \subsection{Implementation and Results}
 The implementation of this system of equations is done using the finite 
-element method (FEM) in Python. You can find the code in the link of the GitHub repository.
+element method (FEM) in Python. To respect the units used in the computations, I performed some conversions, such as from 
+Celsius to Kelvin and for the initial condition we have the reservoir is at equilibrium it means that \ref{eq:initial_condition}. You can find the code in the link of the GitHub repository.
 \href{https://github.com/chahid-rahouti/Coupled-Thermo-Hydraulic}{https://github.com/chahid-rahouti/Coupled-Thermo-Hydraulic}
 
+\begin{equation}
+\Delta p(0,x) = p(0,x) - p_0(0,x) = 0 \quad \text{et} \quad \Delta T(0,x) = T(0,x) - T_0(0,x) = 0
+\label{eq:initial_condition}
+\end{equation}
 \begin{figure}[h!]
     \centering
         \centering
@@ -234,6 +239,108 @@ of the pressure and temperature are go to the injection wells to the production 
 in my case the pressure and temperature are not going to the production well. I think there is a problem 
 but at this moment I don't know what is the problem. You can see this references (\cite{1}, \cite{2}, \cite{3}, \cite{4}, \cite{5}, \cite{6}).
 \section{Conceptual Fault Extension}
+In this section, we will extend the conceptual fault model to include the effects of
+faults on the pressure and temperature distribution in the geothermal reservoir.
+The conceptual fault model is based on the assumption that the faults are
+permeable and can allow fluid flow between the reservoir and the fault. 
+\subsection{Fault model}
+We are modeling the faults as a surface of discontinuity and jump in the pressure and temperature
+distribution in the reservoir \ref{fig:fault}. In our case, we can add this surface of discontinuity
+at our geometry, and we can use the same weak formulation as before, but we need to add
+the effects of the faults. To solve the system in this case, we will use the discontinuous
+Galerkin method (DGM). The DGM is a numerical method take into account
+the discontinuities in the solution. In this case, we can write the weak formulation of the system with the faults as follows:
+\begin{equation}
+\left\{
+\begin{aligned}
+    &\int_{\Omega} \frac{\partial\, \Delta p}{\partial t} u \,dx + c_p \int_{\Omega} \nabla \Delta p \cdot \nabla u \,dx + \int_{\Gamma_{\text{fault}}} \kappa_p [\Delta p] u \,ds = \lambda_{pT} \int_{\Omega} \frac{\partial\, \Delta T}{\partial t} u \,dx,  && \forall u \in V_p \\[2mm]
+    &\int_{\Omega} \frac{\partial\, \Delta T}{\partial t} v \,dx + c_T \int_{\Omega} \nabla \Delta T \cdot \nabla v \,dx + \int_{\Gamma_{\text{fault}}} \kappa_T [\Delta T] v \,ds = \lambda_{Tp} \int_{\Omega} \frac{\partial\, \Delta p}{\partial t} v \,dx, && \forall v \in V_t
+\end{aligned}
+\right.
+\end{equation}
+where $[\Delta p]$ and $[\Delta T]$ are the jumps in the pressure and temperature across the fault surface $\Gamma_{\text{fault}}$, when $\kappa_p$ and $\kappa_T$ are the fault permeabilities. 
+The jumps are defined as the difference between the values of the pressure and temperature on either side of the fault:
+\begin{equation}
+[\Delta p] = \Delta p^+ - \Delta p^- \quad \text{et} \quad [\Delta T] = \Delta T^+ - \Delta T^-
+\end{equation}
+\begin{figure}[h!]
+    \centering
+        \centering
+        \includegraphics[width=\textwidth]{Image/fail.png}
+        \caption{2D conceptual fault model }
+        \label{fig:fault}
+\end{figure}
+\subsection{Impact of the fault on the reservoir}
+% \item Permeable faults (low $\kappa_p$ the fault resistance) can reduce the drawdown by redistributing pressure to zones of lower 
+% permeability. It means, approximately a $\sim 30\%$ reduction in 
+% the pressure gradient between the injection and production wells.
+
+% \item The fault acts as a preferential pathway for the injected cold 
+% water. If $\kappa_T$ is low, the breakthrough time is inversely 
+% proportional to $\kappa_T$ (reduction up to 50\%). There is a 
+% risk of premature cooling of the production well.
+
+% \textbf{Advantage:} Increased production rate (up to $+20\%$) due to the connection of permeable zones.
+
+% \textbf{Risk:} If $\kappa_p$ is too high, the fault drains the injector towards the exterior, reducing thermal recovery.
+
+
+\begin{itemize}
+    \item \textbf{Pressure redistribution:} Permeable faults (low $\kappa_p$ the fault resistance) can reduce the drawdown by redistributing pressure to zones of lower 
+permeability. It means, approximately a $\sim 30\%$ reduction in 
+the pressure gradient between the injection and production wells (\cite{7}, \cite{8}).
+
+    \item \textbf{Thermal breakthrough:} The fault acts as a preferential pathway for the injected cold 
+water. If $\kappa_T$ is low, the breakthrough time is inversely 
+proportional to $t_{\text{breakthrough}} \propto \frac{1}{\kappa_T}$ (reduction up to 50\%). There is a 
+risk of premature cooling of the production well \cite{9}.
+
+    \item \textbf{Advantage:} Increased production rate (up to $+20\%$) due to the connection of permeable zones.
+
+    \item \textbf{Risk:} If $\kappa_p$ is too high, the fault may drain the injected fluid towards the exterior, reducing thermal recovery.
+\end{itemize}
+
+\section{Closed-Loop Control Challenge}
+\subsection{Mathematical problem}
+In this situation, we search how we can control the temperature difference between the injection and production wells, 
+or exactly maximize the duration when $\Delta T_{\text{ext}}(t) \geq \Delta T_{\min}$ for all $t \in [0,\,10\,\text{ans}]$.
+So, the injection flow rate $Q_{\text{inj}}(t)$ (or $\Delta p_{\text{inj}}(t)$) becomes a control variable of the problem. we can use the optimal control theory to solve this problem. We formulate a constrained optimization problem:
+\begin{equation}
+\min_{Q_{\text{inj}}(t)} \underbrace{\int_0^{10\, \text{years}} L(T_{\text{out}}(t), Q_{\text{inj}}(t))\,dt}_{\text{Total control cost}}
+\qquad
+\text{such that } T_{\text{out}}(t) \geq T_{\min} \quad \forall t
+\end{equation}
+
+subject to
+\begin{equation}
+    T_{\text{out}}(t) \geq T_{\min} \quad \text{for all} \quad t \in [0,\,10\,\text{years}],
+\end{equation}
+The function $L(T_{\text{out}}(t), Q_{\text{inj}}(t))$ is generally of the form:
+\begin{equation}
+L(T_{\text{out}}(t), Q_{\text{inj}}(t)) =
+\underbrace{\beta_1 [T_{\min} - T_{\text{out}}(t)]_+^2}_{\text{Penalty if } T_{\text{out}} < T_{\min}}
++ \underbrace{\beta_2 Q_{\text{inj}}^2}_{\text{Pumping consumption}}
+\end{equation}
+where $[x]_+ = \max(0, x)$.
+\subsection{Proposed Strategy}
+
+\textbf{Adaptive control:} Adjust $Q_{\text{inj}}$ in real time using a PI-type control law based on the error $e(t) = T_{\text{out}}(t) - T_{\min}$:
+\begin{equation}
+Q_{\text{inj}}(t) = K_p\, e(t) + K_i \int_{0}^{t} e(\tau)\, d\tau,
+\end{equation}
+where $K_p$ and $K_i$ are tuned by prior modeling.
+
+\textbf{Operational limits:} $Q_{\min} \leq Q_{\text{inj}} \leq Q_{\max}$ to avoid fracturing or critical pressure drop.
+
+
+
+
+
+
+
+
+
+
 
 \addcontentsline{toc}{chapter}{Bibliography}
 \begin{thebibliography}{10}
@@ -271,6 +378,34 @@ but at this moment I don't know what is the problem. You can see this references
   Scientific Reports, 7:17057, 2017.\\
   DOI: \href{https://doi.org/10.1038/s41598-017-14273-4}{10.1038/s41598-017-14273-4}.\\
   Available at: \url{https://www.nature.com/articles/s41598-017-14273-4}
+  \bibitem{7}
+    Alexandros Daniilidis, Sanaz Saeid, Nima Gholizadeh Doonechaly.\\
+    \textit{The fault plane as the main fluid pathway: Geothermal field development options under subsurface and operational uncertainty.}\\
+    Geothermics, Volume 85, 2020, 101771.\\
+    Delft University of Technology, University of Geneva, ETH Zurich.\\
+    DOI: \href{https://doi.org/10.1016/j.geothermics.2019.101771}{10.1016/j.geothermics.2019.101771}.\\
+    Available at: \url{https://www.sciencedirect.com/science/article/pii/S0375650519303372}
+    \bibitem{8}
+  Kingsley Anyim, Quan Gan.\\
+  \textit{Fault zone exploitation in geothermal reservoirs: Production optimization, permeability evolution and induced seismicity.}\\
+  Geothermics, Volume 111, 2024, 102899.\\
+  DOI: \href{https://doi.org/10.1016/j.geothermics.2023.102899}{10.1016/j.geothermics.2023.102899}.\\
+  Available at: \url{https://www.sciencedirect.com/science/article/pii/S0375650523001842}
+    \bibitem{9}
+  Caroline Zaal, Alexandros Daniilidis, Femke C. Vossepoel.\\
+  \textit{Economic and fault stability analysis of geothermal field development in direct-use hydrothermal reservoirs.}\\
+  Geothermal Energy, 2022.\\
+  DOI: \href{https://doi.org/10.1186/s40517-022-00237-5}{10.1186/s40517-022-00237-5}.\\
+  Available at: \url{https://geothermal-energy-journal.springeropen.com/articles/10.1186/s40517-022-00237-5}
+  \bibitem{10}
+  Charbel Salameh, Patrick Schalbart, Bruno Peuportier.\\
+  \textit{Optimal Control Strategies for Energy Production Systems using Buildings Thermal Mass.}
+    \bibitem{11}
+  Zhihong Lei, Yulong Zhang, Qiliang Cui, Yu Shi.\\
+  \textit{The injection‑production performance of an enhanced geothermal system considering fracture network complexity and thermo‑hydro‑mechanical coupling in numerical simulations.}\\
+  Scientific Reports, 2023.\\
+  Available at: \url{https://www.nature.com/articles/s41598-023-31913-6}
+  
 \end{thebibliography}
 
 \end{document}
