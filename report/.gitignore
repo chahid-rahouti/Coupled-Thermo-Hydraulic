@@ -20,6 +20,6 @@
 *.fls
 *.fdb_latexmk
 # PDF files
-*.pdf
+# *.pdf
 # Output directories
 output/
